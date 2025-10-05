@@ -1,0 +1,284 @@
+@import 'slick-carousel/slick/slick.css';
+@import 'slick-carousel/slick/slick-theme.css';
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-ExtraLight.woff2') format('woff2');
+  font-weight: 200;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Light.woff2') format('woff2');
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Regular.woff2') format('woff2');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Medium.woff2') format('woff2');
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Bold.woff2') format('woff2');
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+}
+
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #e53935;
+  --color-secondary: #1e88e5;
+  --color-accent: #fbc02d;
+  --color-success: #4caf50;
+  --color-purple: #9c27b0;
+  --font-poppins: Poppins, sans-serif;
+  /* Animation */
+  --animate-slideDown: slideDown 0.6s ease-out;
+  --animate-fadeInUP: fadeInUp 0.8s ease-out;
+  --animate-fadeIn: fadeIn 0.3s ease-out;
+  @keyframes slideDown {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeInUp {
+    from {
+      transform: translateY(30px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply font-poppins;
+    font-family: 'Poppins';
+    src: url('/fonts/Poppins-ExtraLight.woff2') format('woff2');
+    font-weight: 200;
+  }
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Light.woff2') format('woff2');
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Regular.woff2') format('woff2');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Medium.woff2') format('woff2');
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Bold.woff2') format('woff2');
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+}
+
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #e53935;
+  --color-secondary: #1e88e5;
+  --color-accent: #fbc02d;
+  --font-poppins: Poppins, sans-serif;
+  /* Animation */
+  --animate-slideDown: slideDown 0.6s ease-out;
+  @keyframes slideDown {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply font-poppins;
+  }
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-ExtraLight.woff2') format('woff2');
+  font-weight: 200;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Light.woff2') format('woff2');
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Regular.woff2') format('woff2');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Medium.woff2') format('woff2');
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Bold.woff2') format('woff2');
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+}
+
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #e53935;
+  --color-secondary: #1e88e5;
+  --color-accent: #fbc02d;
+  --font-poppins: Poppins, sans-serif;
+  /* Animation */
+  --animate-slideDown: slideDown 0.6s ease-out;
+  @keyframes slideDown {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply font-poppins;
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.2s ease;
+}
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.editor-scope .sun-editor,
+.editor-scope .sun-editor * {
+  font-family:
+    'Poppins',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol',
+    'Noto Color Emoji' !important;
+}
+
+.editor-scope .sun-editor-editable {
+  font-size: 15px !important;
+  line-height: 1.8 !important;
+  font-weight: 400 !important;
+  color: #333 !important;
+}
+
+.editor-scope .sun-editor-editable p,
+.editor-scope .sun-editor-editable li,
+.editor-scope .sun-editor-editable td,
+.editor-scope .sun-editor-editable th {
+  font-size: 15px !important;
+  line-height: 1.8 !important;
+}
+
+.editor-scope .sun-editor-editable b,
+.editor-scope .sun-editor-editable strong {
+  font-weight: 600 !important;
+}
+.editor-scope .sun-editor-editable i,
+.editor-scope .sun-editor-editable em {
+  font-style: italic !important;
+}
