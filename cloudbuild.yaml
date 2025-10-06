@@ -1,0 +1,48 @@
+steps:
+  - name: "node:18"
+    entrypoint: npm
+    args: ["install"]
+    dir: "frontend"
+
+  - name: "node:18"
+    entrypoint: npm
+    args: ["run", "build"]
+    dir: "frontend"
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gsutil
+    args:
+      - "-m"
+      - "rsync"
+      - "-r"
+      - "frontend/dist"
+      - "gs://event-management-frontend"
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "asia-southeast1-docker.pkg.dev/event-management-prod-474206/event-management-repo/event-management-app:1.0",
+        "./backend",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "push",
+        "asia-southeast1-docker.pkg.dev/event-management-prod-474206/event-management-repo/event-management-app:1.0",
+      ]
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "gcloud"
+    args:
+      [
+        "compute",
+        "instance-groups",
+        "managed",
+        "rolling-action",
+        "restart",
+        "event-management-mig",
+        "--zone=asia-southeast1-b",
+      ]
