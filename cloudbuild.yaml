@@ -42,7 +42,7 @@ steps:
         "instance-groups",
         "managed",
         "rolling-action",
-        "restart",
+        "start-update",
         "event-management-v2",
         "--region=asia-southeast1",
       ]
