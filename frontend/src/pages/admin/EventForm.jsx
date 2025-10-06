@@ -15,7 +15,6 @@ import SunEditorEditor from '@components/common/SunEditorEditor';
 import BannerUpload from '@/components/features/user/BannerUpload';
 import EventManagerSection from './EventManagementManage/EventManagerSection';
 import dayjs from 'dayjs';
-import { prependApiUrlToImages, stripApiUrlFromImages } from '@/utils/htmlProcessor';
 import { base64ToFile } from '@/utils/eventHelpers';
 
 const toDateInput = (timestampInSecondsOrIso) => {
@@ -48,7 +47,7 @@ const EventForm = ({ onSuccess, onCancel, initialData, isEdit = false }) => {
 
   const defaultValues = useMemo(() => {
     const base = eventDetail || initialData || {};
-    const processedDescription = prependApiUrlToImages(base?.description || '');
+    const processedDescription = base?.description || '';
 
     return {
       title: base?.title || '',
@@ -100,9 +99,10 @@ const EventForm = ({ onSuccess, onCancel, initialData, isEdit = false }) => {
           uploadImage(imgFile)
             .unwrap()
             .then((res) => {
-              let returned = String(res?.url || '');
-              if (!returned.startsWith('/')) returned = `/${returned}`;
-              base64ToUrl.set(base64String, returned);
+              const publicUrl = res?.url;
+              if (publicUrl) {
+                base64ToUrl.set(base64String, publicUrl);
+              }
             }),
         );
       });
@@ -121,11 +121,10 @@ const EventForm = ({ onSuccess, onCancel, initialData, isEdit = false }) => {
         return;
       }
     }
-    const relativeHtml = stripApiUrlFromImages(finalHtmlContent);
 
     const payload = {
       title: formData.title,
-      description: relativeHtml,
+      description: finalHtmlContent,
       start_time: formData.start_time ? new Date(formData.start_time).toISOString() : null,
       end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
       location: formData.location,

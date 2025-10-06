@@ -26,11 +26,7 @@ const EventCard = ({ event, onEdit, onDelete, onView }) => {
     >
       <div className="relative h-48 overflow-hidden bg-gradient-to-r from-blue-400 to-purple-500">
         {event.banner ? (
-          <img
-            src={`${import.meta.env.VITE_BASE_URL}/uploads/${event.banner}`}
-            alt={event.title}
-            className="h-full w-full object-cover"
-          />
+          <img src={event.banner} alt={event.title} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full items-center justify-center">
             <FontAwesomeIcon icon={faCalendarAlt} className="text-4xl text-white opacity-50" />

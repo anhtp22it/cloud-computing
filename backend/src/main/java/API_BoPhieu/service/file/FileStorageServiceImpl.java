@@ -1,50 +1,25 @@
 package API_BoPhieu.service.file;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.net.URL;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import API_BoPhieu.exception.FileException;
-import jakarta.annotation.PostConstruct;
+import com.google.cloud.storage.BlobId;
+import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageOptions;
 
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
 
-    @Value("${file.upload-dir}")
-    private String uploadDir;
+    @Value("${gcs.bucket-name}")
+    private String bucketName;
 
-    @PostConstruct
-    public void init() {
-        createUploadDirectory();
-    }
-
-    private void createUploadDirectory() {
-        try {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-        } catch (IOException e) {
-            throw new FileException("Không thể tạo thư mục tải lên: ");
-        }
-    }
-
-    private void createDirectoryIfNotExists(Path path) {
-        try {
-            if (!Files.exists(path)) {
-                Files.createDirectories(path);
-            }
-        } catch (IOException e) {
-            throw new FileException("Không thể tạo thư mục: " + path.toString());
-        }
-    }
+    private final Storage storage = StorageOptions.getDefaultInstance().getService();
 
     @Override
     public String storeFile(MultipartFile file, String subDir, String prefix) {
@@ -53,39 +28,42 @@ public class FileStorageServiceImpl implements FileStorageService {
             String fileExtension = getFileExtension(originalFilename);
             String newFilename = prefix + "_" + System.currentTimeMillis() + fileExtension;
 
-            Path subDirPath = Paths.get(uploadDir, subDir);
-            createDirectoryIfNotExists(subDirPath);
-            Path targetLocation = subDirPath.resolve(newFilename);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            String blobName = subDir + "/" + newFilename;
+
+            BlobId blobId = BlobId.of(bucketName, blobName);
+
+            BlobInfo blobInfo = BlobInfo.newBuilder(blobId)
+                    .setContentType(file.getContentType())
+                    .build();
+
+            storage.create(blobInfo, file.getBytes());
 
             return newFilename;
+
         } catch (IOException e) {
             throw new FileException("Không thể lưu trữ tệp. Vui lòng thử lại!");
         }
     }
 
     @Override
-    public Resource loadFileAsResource(String subDir, String filename) {
-        try {
-            Path filePath = Paths.get(uploadDir, subDir).resolve(filename).normalize();
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (resource.exists()) {
-                return resource;
-            } else {
-                throw new FileException("Không tìm thấy tệp: " + filename);
-            }
-        } catch (MalformedURLException e) {
-            throw new FileException("Không tìm thấy tệp: " + filename);
-        }
+    public String getSignedUrl(String subDir, String filename) {
+        String blobName = subDir + "/" + filename;
+        BlobInfo blobInfo = BlobInfo.newBuilder(BlobId.of(bucketName, blobName)).build();
+        URL url = storage.signUrl(blobInfo, 7, TimeUnit.DAYS, Storage.SignUrlOption.withV4Signature());
+        return url.toString();
     }
 
     @Override
     public void deleteFile(String subDir, String filename) {
         try {
-            Path filePath = Paths.get(uploadDir, subDir).resolve(filename).normalize();
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
+            String blobName = subDir + "/" + filename;
+            BlobId blobId = BlobId.of(bucketName, blobName);
+
+            boolean deleted = storage.delete(blobId);
+            if (!deleted) {
+                throw new FileException("Tệp không tồn tại hoặc không thể xóa.");
+            }
+        } catch (Exception e) {
             throw new FileException("Không thể xóa tệp: " + e.getMessage());
         }
     }

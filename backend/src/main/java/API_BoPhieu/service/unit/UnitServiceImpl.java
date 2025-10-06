@@ -34,15 +34,6 @@ public class UnitServiceImpl implements UnitService {
     private final UserRepository userRepository;
     private final UnitMapper unitMapper;
 
-    private UnitResponseDTO toDtoWithParentName(Unit unit) {
-        UnitResponseDTO dto = unitMapper.toResponse(unit);
-        if (unit.getParentId() != null) {
-            unitRepository.findById(unit.getParentId())
-                    .ifPresent(parent -> dto.setParentName(parent.getUnitName()));
-        }
-        return dto;
-    }
-
     private List<UnitResponseDTO> toDtoListWithParentNames(List<Unit> units) {
         if (units.isEmpty()) {
             return Collections.emptyList();
@@ -72,8 +63,7 @@ public class UnitServiceImpl implements UnitService {
                 : unitRepository.findAll(pageable);
 
         List<UnitResponseDTO> dtoList = toDtoListWithParentNames(unitPage.getContent());
-        Page<UnitResponseDTO> dtoPage =
-                new PageImpl<>(dtoList, pageable, unitPage.getTotalElements());
+        Page<UnitResponseDTO> dtoPage = new PageImpl<>(dtoList, pageable, unitPage.getTotalElements());
 
         log.info("Lấy thành công {} đơn vị.", unitPage.getNumberOfElements());
 
@@ -88,12 +78,12 @@ public class UnitServiceImpl implements UnitService {
         Unit unit = unitRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Không tìm thấy đơn vị với ID: " + id));
         log.info("Lấy thành công thông tin đơn vị '{}' (ID: {})", unit.getUnitName(), id);
-        return toDtoWithParentName(unit);
+        return toDtoListWithParentNames(List.of(unit)).get(0);
     }
 
     @Override
     @Transactional
-    @CacheEvict(cacheNames = {"units_paginated", "all_units", "unit_detail"}, allEntries = true)
+    @CacheEvict(cacheNames = { "units_paginated", "all_units", "unit_detail" }, allEntries = true)
     public UnitResponseDTO create(UnitRequestDTO req) {
         log.debug("Bắt đầu tạo đơn vị mới với tên: '{}'", req.getUnitName());
         if (unitRepository.existsByUnitNameIgnoreCase(req.getUnitName())) {
@@ -105,10 +95,9 @@ public class UnitServiceImpl implements UnitService {
         if (req.getParentId() == null) {
             Unit savedUnit = unitRepository.save(newUnit);
             savedUnit.setParentId(savedUnit.getId());
-            Unit finalUnit = unitRepository.save(savedUnit);
-            log.info("Đã tạo thành công đơn vị CHA '{}' (ID: {})", finalUnit.getUnitName(),
-                    finalUnit.getId());
-            return toDtoWithParentName(finalUnit);
+            unitRepository.save(savedUnit);
+            log.info("Đã tạo thành công đơn vị CHA '{}' (ID: {})", savedUnit.getUnitName(), savedUnit.getId());
+            return toDtoListWithParentNames(List.of(savedUnit)).get(0);
         } else {
             if (!unitRepository.existsById(req.getParentId())) {
                 throw new ResourceNotFoundException(
@@ -117,13 +106,13 @@ public class UnitServiceImpl implements UnitService {
             Unit savedUnit = unitRepository.save(newUnit);
             log.info("Đã tạo thành công đơn vị CON '{}' (ID: {})", savedUnit.getUnitName(),
                     savedUnit.getId());
-            return toDtoWithParentName(savedUnit);
+            return toDtoListWithParentNames(List.of(savedUnit)).get(0);
         }
     }
 
     @Override
     @Transactional
-    @CacheEvict(cacheNames = {"units_paginated", "all_units", "unit_detail"}, allEntries = true)
+    @CacheEvict(cacheNames = { "units_paginated", "all_units", "unit_detail" }, allEntries = true)
     public UnitResponseDTO update(Integer id, UnitRequestDTO req) {
         log.debug("Bắt đầu cập nhật đơn vị ID: {}", id);
         Unit existingUnit = unitRepository.findById(id).orElseThrow(
@@ -154,12 +143,12 @@ public class UnitServiceImpl implements UnitService {
         Unit updatedUnit = unitRepository.save(existingUnit);
         log.info("Đã cập nhật thành công đơn vị '{}' (ID: {})", updatedUnit.getUnitName(),
                 updatedUnit.getId());
-        return toDtoWithParentName(updatedUnit);
+        return toDtoListWithParentNames(List.of(updatedUnit)).get(0);
     }
 
     @Override
     @Transactional
-    @CacheEvict(cacheNames = {"units_paginated", "all_units", "unit_detail"}, allEntries = true)
+    @CacheEvict(cacheNames = { "units_paginated", "all_units", "unit_detail" }, allEntries = true)
     public void delete(Integer id) {
         log.debug("Bắt đầu xóa đơn vị ID: {}", id);
         Unit unitToDelete = unitRepository.findById(id).orElseThrow(
@@ -227,19 +216,6 @@ public class UnitServiceImpl implements UnitService {
         log.debug("Lấy danh sách tất cả các đơn vị.");
         List<Unit> units = unitRepository.findAll();
 
-        Map<Integer, String> unitNamesMap =
-                units.stream().collect(Collectors.toMap(Unit::getId, Unit::getUnitName));
-
-        return units.stream().map(unit -> {
-            UnitResponseDTO dto = unitMapper.toResponse(unit);
-            Integer pid = unit.getParentId();
-
-            if (pid != null) {
-                dto.setParentName(
-                        pid.equals(unit.getId()) ? unit.getUnitName() : unitNamesMap.get(pid));
-            }
-            return dto;
-        }).collect(Collectors.toList());
+        return toDtoListWithParentNames(units);
     }
-
 }

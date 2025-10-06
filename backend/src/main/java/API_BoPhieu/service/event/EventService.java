@@ -2,17 +2,12 @@ package API_BoPhieu.service.event;
 
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Optional;
-
 import API_BoPhieu.constants.EventStatus;
-import API_BoPhieu.dto.common.PageResponse;
 import API_BoPhieu.dto.event.EventDetailResponse;
 import API_BoPhieu.dto.event.EventDto;
 import API_BoPhieu.dto.event.EventPageWithCountersResponse;
 import API_BoPhieu.dto.event.EventResponse;
 import API_BoPhieu.entity.Attendant;
-
-import java.util.List;
 
 public interface EventService {
         EventResponse createEvent(EventDto eventDto, String creatorEmail);

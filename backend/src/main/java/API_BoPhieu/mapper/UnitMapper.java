@@ -8,6 +8,7 @@ import API_BoPhieu.entity.Unit;
 
 @Mapper(componentModel = "spring")
 public interface UnitMapper {
+    @Mapping(target = "parentName", ignore = true)
     UnitResponseDTO toResponse(Unit entity);
 
     @Mapping(target = "id", ignore = true)

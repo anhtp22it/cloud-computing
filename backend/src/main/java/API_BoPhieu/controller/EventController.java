@@ -92,8 +92,7 @@ public class EventController {
     @GetMapping("/{id}")
     public ResponseEntity<EventDetailResponse> getEventById(@PathVariable Integer id,
             Authentication authentication) {
-        EventDetailResponse eventDetailResponse =
-                eventService.getEventById(id, authentication.getName());
+        EventDetailResponse eventDetailResponse = eventService.getEventById(id, authentication.getName());
 
         return ResponseEntity.ok(eventDetailResponse);
     }
@@ -110,8 +109,8 @@ public class EventController {
                 page, size, status, search);
         String email = authentication != null ? authentication.getName() : null;
 
-        EventPageWithCountersResponse result =
-                eventService.getAllEvents(page, size, sortBy, sortDir, status, search, email);
+        EventPageWithCountersResponse result = eventService.getAllEvents(page, size, sortBy, sortDir, status, search,
+                email);
 
         return ResponseEntity.ok(result);
     }
@@ -126,8 +125,8 @@ public class EventController {
 
         String email = authentication != null ? authentication.getName() : null;
 
-        EventPageWithCountersResponse result =
-                eventService.getManagedEvents(page, size, sortBy, sortDir, status, search, email);
+        EventPageWithCountersResponse result = eventService.getManagedEvents(page, size, sortBy, sortDir, status,
+                search, email);
 
         return ResponseEntity.ok(result);
     }

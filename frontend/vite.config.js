@@ -9,12 +9,6 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
-    proxy: {
-      '/uploads': {
-        target: 'http://192.168.1.19:8080/api/v1',
-        changeOrigin: true,
-      },
-    },
   },
   plugins: [react(), tailwindcss()],
   resolve: {

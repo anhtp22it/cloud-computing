@@ -47,6 +47,7 @@ import API_BoPhieu.repository.EventRepository;
 import API_BoPhieu.repository.UserRepository;
 import API_BoPhieu.service.attendant.QRCodeService;
 import API_BoPhieu.service.file.FileStorageService;
+import API_BoPhieu.service.file.FileStorageServiceImpl;
 import API_BoPhieu.specification.EventSpecification;
 import lombok.RequiredArgsConstructor;
 
@@ -140,33 +141,21 @@ public class EventServiceImpl implements EventService {
     public EventResponse uploadBanner(Integer eventId, MultipartFile file) {
         log.info("Bắt đầu quá trình upload banner cho sự kiện ID: {}", eventId);
 
-        Event event = eventRepository.findById(eventId).orElseThrow(() -> {
-            log.error("Upload banner thất bại: Không tìm thấy sự kiện ID {}", eventId);
-            return new NotFoundException("Không thể tìm thấy sự kiện!");
-        });
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Không thể tìm thấy sự kiện!"));
 
         if (event.getBanner() != null && !event.getBanner().isEmpty()) {
-            try {
-                String oldBannerPath = event.getBanner();
-                String oldFilename = oldBannerPath.substring(oldBannerPath.lastIndexOf("/") + 1);
-                fileStorageService.deleteFile("banners", oldFilename);
-                log.debug("Đã xóa banner cũ thành công: {}", oldBannerPath);
-            } catch (Exception e) {
-                log.warn("Không thể xóa banner cũ cho sự kiện ID {}: {}", eventId, e.getMessage());
-            }
+            fileStorageService.deleteFile("banners", event.getBanner());
+            log.debug("Đã xóa banner cũ thành công: {}", event.getBanner());
         }
 
-        String timestamp = String.valueOf(System.currentTimeMillis());
-        String baseName = "banner_event_" + eventId;
-        String uniqueFilename =
-                fileStorageService.storeFile(file, "banners", baseName + "_" + timestamp);
+        String uniqueFilename = fileStorageService.storeFile(file, "banners", "banner_event_" + eventId);
 
-        String newBannerPath = "banners/" + uniqueFilename;
-        event.setBanner(newBannerPath);
+        event.setBanner(uniqueFilename);
         event = eventRepository.save(event);
 
-        log.info("Upload và cập nhật banner thành công cho sự kiện ID {}. Banner mới: {}", eventId,
-                newBannerPath);
+        log.info("Upload và cập nhật banner thành công cho sự kiện ID {}. Tên file banner mới: {}", eventId,
+                uniqueFilename);
 
         EventResponse eventResponse = eventMapper.toEventResponse(event);
         eventResponse.setCurrentParticipants(attendantRepository.countByEventId(eventId));
@@ -238,8 +227,7 @@ public class EventServiceImpl implements EventService {
         log.debug("Đã tìm thấy {} người tham gia và {} quản lý cho sự kiện ID: {}",
                 attendants.size(), eventManagers.size(), eventId);
 
-        Set<Integer> userIds =
-                attendants.stream().map(Attendant::getUserId).collect(Collectors.toSet());
+        Set<Integer> userIds = attendants.stream().map(Attendant::getUserId).collect(Collectors.toSet());
         eventManagers.forEach(em -> userIds.add(em.getUserId()));
 
         log.debug("Thực hiện truy vấn hàng loạt cho {} user ID.", userIds.size());
@@ -248,25 +236,32 @@ public class EventServiceImpl implements EventService {
                 : userRepository.findAllById(new ArrayList<>(userIds)).stream()
                         .collect(Collectors.toMap(User::getId, user -> user));
 
-        boolean isUserRegistered =
-                attendants.stream().anyMatch(a -> a.getUserId().equals(currentUser.getId()));
+        boolean isUserRegistered = attendants.stream().anyMatch(a -> a.getUserId().equals(currentUser.getId()));
 
         List<ParticipantInfo> participants = attendants.stream().map(
                 attendant -> mapToParticipantInfo(attendant, userMap.get(attendant.getUserId())))
                 .collect(Collectors.toList());
 
-        List<ManagerInfo> managerInfos =
-                eventManagers.stream().filter(em -> em.getRoleType() == EventManagement.MANAGE)
-                        .map(manager -> mapToManagerInfo(userMap.get(manager.getUserId())))
-                        .collect(Collectors.toList());
+        List<ManagerInfo> managerInfos = eventManagers.stream()
+                .filter(em -> em.getRoleType() == EventManagement.MANAGE)
+                .map(manager -> mapToManagerInfo(userMap.get(manager.getUserId())))
+                .collect(Collectors.toList());
 
-        List<SecretaryInfo> secretaryInfos =
-                eventManagers.stream().filter(em -> em.getRoleType() == EventManagement.STAFF)
-                        .map(secretary -> mapToSecretaryInfo(userMap.get(secretary.getUserId())))
-                        .collect(Collectors.toList());
+        List<SecretaryInfo> secretaryInfos = eventManagers.stream()
+                .filter(em -> em.getRoleType() == EventManagement.STAFF)
+                .map(secretary -> mapToSecretaryInfo(userMap.get(secretary.getUserId())))
+                .collect(Collectors.toList());
 
-        return eventMapper.toEventDetailResponse(event, isUserRegistered, participants,
+        EventDetailResponse response = eventMapper.toEventDetailResponse(event, isUserRegistered, participants,
                 managerInfos, secretaryInfos);
+
+        if (event.getBanner() != null && !event.getBanner().isEmpty()) {
+            String bannerUrl = ((FileStorageServiceImpl) fileStorageService).getSignedUrl("banners",
+                    event.getBanner());
+            response.setBanner(bannerUrl);
+        }
+
+        return response;
     }
 
     @Override
@@ -274,13 +269,11 @@ public class EventServiceImpl implements EventService {
     public EventPageWithCountersResponse getAllEvents(int page, int size, String sortBy,
             String sortDir, EventStatus status, String search, String email) {
 
-        Optional<User> userOptional =
-                (email != null && !email.isBlank()) ? userRepository.findByEmail(email)
-                        : Optional.empty();
+        Optional<User> userOptional = (email != null && !email.isBlank()) ? userRepository.findByEmail(email)
+                : Optional.empty();
 
-        Sort sort =
-                sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
-                        : Sort.by(sortBy).descending();
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Specification<Event> spec = Specification.where(EventSpecification.hasStatus(status))
@@ -319,9 +312,8 @@ public class EventServiceImpl implements EventService {
         User user = userRepository.findByEmail(email).orElseThrow(
                 () -> new AuthException("Không tìm thấy người dùng với email: " + email));
 
-        Sort sort =
-                sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
-                        : Sort.by(sortBy).descending();
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
         Specification<Event> spec = Specification
@@ -369,11 +361,10 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventPage.getContent();
         List<Integer> eventIds = events.stream().map(Event::getId).collect(Collectors.toList());
 
-        Set<Integer> creatorIds =
-                events.stream().map(Event::getCreateBy).collect(Collectors.toSet());
+        Set<Integer> creatorIds = events.stream().map(Event::getCreateBy).collect(Collectors.toSet());
         List<EventManager> allManagersOnPage = eventManagerRepository.findAllByEventIdIn(eventIds);
-        Set<Integer> managerUserIds =
-                allManagersOnPage.stream().map(EventManager::getUserId).collect(Collectors.toSet());
+        Set<Integer> managerUserIds = allManagersOnPage.stream().map(EventManager::getUserId)
+                .collect(Collectors.toSet());
 
         Set<Integer> allUserIdsToFetch = new HashSet<>(creatorIds);
         allUserIdsToFetch.addAll(managerUserIds);
@@ -411,6 +402,12 @@ public class EventServiceImpl implements EventService {
                             eventResponse.setManagerName(managerUser.getName());
                         }
                     });
+
+            if (event.getBanner() != null && !event.getBanner().isEmpty()) {
+                String bannerUrl = ((FileStorageServiceImpl) fileStorageService).getSignedUrl("banners",
+                        event.getBanner());
+                eventResponse.setBanner(bannerUrl);
+            }
 
             return eventResponse;
         });

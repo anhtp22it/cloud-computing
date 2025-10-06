@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import API_BoPhieu.service.file.FileStorageService;
+import API_BoPhieu.service.file.FileStorageServiceImpl;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -31,10 +32,10 @@ public class MediaController {
         }
 
         String fileName = fileStorageService.storeFile(file, "images", "img_");
-        String relativeUrl = "uploads/images/" + fileName;
+        String publicUrl = ((FileStorageServiceImpl) fileStorageService).getSignedUrl("images", fileName);
 
-        log.info("Upload ảnh thành công. URL: {}", relativeUrl);
+        log.info("Upload ảnh thành công. URL: {}", publicUrl);
 
-        return ResponseEntity.ok(Map.of("url", relativeUrl));
+        return ResponseEntity.ok(Map.of("url", publicUrl));
     }
 }

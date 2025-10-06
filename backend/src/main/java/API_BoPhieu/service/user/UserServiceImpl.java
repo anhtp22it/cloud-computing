@@ -40,28 +40,52 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
 
-    private UserResponseDTO convertToDto(User user, Map<Integer, Unit> unitMap) {
-        UserResponseDTO userDto = userMapper.toResponseDTO(user);
-
-        Integer unitId = user.getUnitId();
-        if (unitId != null) {
-            Unit unit = unitMap.get(unitId);
-            if (unit != null) {
-                UnitResponseDTO unitDto = unitMapper.toResponse(unit);
-
-                Integer parentId = unit.getParentId();
-                if (parentId != null) {
-                    Unit parentUnit = unitMap.get(parentId);
-                    if (parentUnit != null) {
-                        unitDto.setParentName(parentUnit.getUnitName());
-                    }
-                }
-
-                userDto.setUnit(unitDto);
-            }
+    private List<UserResponseDTO> mapUsersToUserResponseDTOs(List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        return userDto;
+        Set<Integer> directUnitIds = users.stream()
+                .map(User::getUnitId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (directUnitIds.isEmpty()) {
+            return users.stream().map(userMapper::toResponseDTO).collect(Collectors.toList());
+        }
+
+        List<Unit> directUnits = unitRepository.findAllById(directUnitIds);
+
+        Set<Integer> parentUnitIds = directUnits.stream()
+                .map(Unit::getParentId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Integer, Unit> fullUnitMap = directUnits.stream()
+                .collect(Collectors.toMap(Unit::getId, Function.identity()));
+
+        if (!parentUnitIds.isEmpty()) {
+            unitRepository.findAllById(parentUnitIds)
+                    .forEach(parentUnit -> fullUnitMap.putIfAbsent(parentUnit.getId(), parentUnit));
+        }
+
+        return users.stream().map(user -> {
+            UserResponseDTO userDto = userMapper.toResponseDTO(user);
+            if (user.getUnitId() != null) {
+                Unit unit = fullUnitMap.get(user.getUnitId());
+                if (unit != null) {
+                    UnitResponseDTO unitDto = unitMapper.toResponse(unit);
+                    if (unit.getParentId() != null) {
+                        Unit parentUnit = fullUnitMap.get(unit.getParentId());
+                        if (parentUnit != null) {
+                            unitDto.setParentName(parentUnit.getUnitName());
+                        }
+                    }
+                    userDto.setUnit(unitDto);
+                }
+            }
+            return userDto;
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -70,17 +94,7 @@ public class UserServiceImpl implements UserService {
     public List<UserResponseDTO> getAllUsers() {
         log.debug("Lấy danh sách tất cả người dùng.");
         List<User> users = userRepository.findAll();
-        if (users.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Set<Integer> unitIds = users.stream().map(User::getUnitId).filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        Map<Integer, Unit> unitMap = unitRepository.findAllById(unitIds).stream()
-                .collect(Collectors.toMap(Unit::getId, Function.identity()));
-
-        return users.stream().map(user -> convertToDto(user, unitMap)).collect(Collectors.toList());
+        return mapUsersToUserResponseDTOs(users);
     }
 
     @Override
@@ -89,14 +103,7 @@ public class UserServiceImpl implements UserService {
         log.debug("Lấy thông tin người dùng ID: {}", id);
         User user = userRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + id));
-
-        Map<Integer, Unit> unitMap = Collections.emptyMap();
-        if (user.getUnitId() != null) {
-            unitMap = unitRepository.findAllById(Collections.singletonList(user.getUnitId()))
-                    .stream().collect(Collectors.toMap(Unit::getId, Function.identity()));
-        }
-
-        return convertToDto(user, unitMap);
+        return mapUsersToUserResponseDTOs(Collections.singletonList(user)).get(0);
     }
 
     @Override
@@ -147,18 +154,14 @@ public class UserServiceImpl implements UserService {
         return getUserById(updatedUser.getId());
     }
 
+    @Override
     public List<UserResponseDTO> getUsersByUnit(Integer unitId) {
         log.debug("Lấy danh sách người dùng thuộc đơn vị ID: {}", unitId);
         if (!unitRepository.existsById(unitId)) {
             throw new ResourceNotFoundException("Không tìm thấy đơn vị với ID: " + unitId);
         }
-
         List<User> users = userRepository.findByUnitId(unitId);
-        Unit unit = unitRepository.findById(unitId).orElse(null);
-        Map<Integer, Unit> unitMap =
-                (unit != null) ? Collections.singletonMap(unitId, unit) : Collections.emptyMap();
-
-        return users.stream().map(user -> convertToDto(user, unitMap)).collect(Collectors.toList());
+        return mapUsersToUserResponseDTOs(users);
     }
 
     @Override

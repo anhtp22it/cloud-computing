@@ -4,7 +4,6 @@ import SunEditorEditor from '@components/common/SunEditorEditor';
 import TextInput from '@components/common/TextInput';
 import BannerUpload from '@/components/features/user/BannerUpload';
 import { openSnackbar } from '@store/slices/snackbarSlice';
-import { prependApiUrlToImages, stripApiUrlFromImages } from '@utils/htmlProcessor';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
@@ -37,7 +36,7 @@ const SettingsTab = ({ eventData }) => {
     useUpdateEventMutation();
 
   const defaultValues = useMemo(() => {
-    const processedDescription = prependApiUrlToImages(eventData?.description || '');
+    const processedDescription = eventData?.description || '';
 
     return {
       title: eventData?.title || '',
@@ -91,16 +90,10 @@ const SettingsTab = ({ eventData }) => {
         const promise = uploadImage(imageFile)
           .unwrap()
           .then((response) => {
-            let returned = String(response?.url || '');
-
-            // if (!returned.startsWith("/")) {
-            //   returned = returned.startsWith("images/")
-            //     ? `/${returned}`
-            //     : `/images/${returned}`;
-            // }
-
-            const relativeUrl = '/' + returned;
-            base64ToUrlMap.set(base64String, relativeUrl);
+            const publicUrl = response?.url;
+            if (publicUrl) {
+              base64ToUrlMap.set(base64String, publicUrl);
+            }
           });
         uploadPromises.push(promise);
       });
@@ -127,11 +120,9 @@ const SettingsTab = ({ eventData }) => {
       }
     }
 
-    const relativePathHtml = stripApiUrlFromImages(finalHtmlContent);
-
     const payload = {
       title: formData.title,
-      description: relativePathHtml,
+      description: finalHtmlContent,
       start_time: formData.start_time ? new Date(formData.start_time).toISOString() : null,
       end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
       location: formData.location,
