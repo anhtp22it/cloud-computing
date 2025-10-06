@@ -44,6 +44,7 @@ steps:
         "rolling-action",
         "start-update",
         "event-management-v2",
+        "--version=template=event-management-template",
         "--region=asia-southeast1",
       ]
 
