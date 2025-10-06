@@ -43,8 +43,8 @@ steps:
         "managed",
         "rolling-action",
         "start-update",
-        "event-management",
-        "--version=template=projects/event-management-prod-474206/regions/asia-southeast1/instanceTemplates/event-management-template-v2",
+        "event-management-mig",
+        "--version=template=projects/event-management-prod-474206/regions/asia-southeast1/instanceTemplates/event-management-template",
         "--zone=asia-southeast1-b",
       ]
 
