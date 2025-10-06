@@ -45,6 +45,7 @@ steps:
         "restart",
         "event-management-mig",
         "--zone=asia-southeast1-b",
+        "--region=asia-southeast1",
       ]
 
 options:
