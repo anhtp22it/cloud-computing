@@ -45,7 +45,7 @@ steps:
         "start-update",
         "event-management-mig",
         "--version=template=projects/event-management-prod-474206/regions/asia-southeast1/instanceTemplates/event-management-template",
-        "--zone=asia-southeast1-b",
+        "--region=asia-southeast1",
       ]
 
 options:
