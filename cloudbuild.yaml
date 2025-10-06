@@ -43,7 +43,7 @@ steps:
         "managed",
         "rolling-action",
         "restart",
-        "event-management-mig",
+        "event-management-v2",
         "--region=asia-southeast1",
       ]
 
