@@ -46,3 +46,6 @@ steps:
         "event-management-mig",
         "--zone=asia-southeast1-b",
       ]
+
+options:
+  logging: CLOUD_LOGGING_ONLY
